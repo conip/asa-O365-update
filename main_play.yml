@@ -15,8 +15,6 @@
         var_object_name: "{{ hostvars[inventory_hostname].var_object_name }}"
         var_allow_LAN: "{{ hostvars[inventory_hostname].var_allow_LAN }}"
 
-
-
 - name: UPDATING ASA
   hosts: asa
   connection: network_cli
@@ -24,20 +22,5 @@
   become_method: enable
   roles:
     - role: asa-O365
-      #var_object_type: "{{ hostvars[groups['asa']['inventory_hostname']].var_object_type }}"
-      #var_object_name: "{{ hostvars[groups['asa']['inventory_hostname']].var_object_name }}"
-      #var_allow_LAN: "{{ hostvars[groups['asa']['inventory_hostname']].var_allow_LAN }}"
-
-      # var_object_type: "{{ hostvars[inventory_hostname].var_object_type }}"
-      # var_object_name: "{{ hostvars[inventory_hostname].var_object_name }}"
-      # var_allow_LAN: "{{ hostvars[inventory_hostname].var_allow_LAN }}"
-
-      #var_object_type: "standard-acl"
-      #var_object_type: "object-group"
-      
-      #var_object_name: "Ensono-O365-Split"
-      #var_object_name: "Office365-ALL"
-      #var_update_file_path: "./update_files/"
       var_version: "{{ hostvars['localhost']['version_result']['meta'] }}"
-      #var_allow_LAN: true
       
