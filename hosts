@@ -8,13 +8,3 @@ ansible_ssh_pass=cisco
 ansible_connection=network_cli
 ansible_python_interpreter=auto
 ansible_network_os=asa
-
-[asa1:vars]
-var_object_type=object-group
-var_object_name=Office-365
-var_allow_LAN=false
-
-[asa2:vars]
-var_object_type=standard-acl
-var_object_name=Ensono-O365-Split
-var_allow_LAN=true
