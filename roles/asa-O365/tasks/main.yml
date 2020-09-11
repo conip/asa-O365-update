@@ -1,0 +1,74 @@
+---
+# tasks file for asa-O365
+
+#- set_fact:
+#    var_object_type: "{{ hostvars[inventory_hostname].var_object_type }}"
+#    var_object_name: "{{ hostvars[inventory_hostname].var_object_name }}"
+#    var_allow_LAN: "{{ hostvars[inventory_hostname].var_allow_LAN }}"
+
+- debug:
+    var: var_object_type
+- debug:
+    var: var_object_name
+- debug:
+    var: var_allow_LAN
+
+#- name: CHECKING FOR THE NEWEST VERSION AND IF NEW AVAILABLE - SAVING TO FILE "./update_files/o365_version_xxxxxxxxxx.txt"
+#  local_action:
+#    module: check_O365_updates
+#  register: version_result
+
+#- set_fact:
+#    var_version: "{{ version_result['meta'] }}"
+
+- debug:
+    var: var_version
+
+- name: SETTING var_update_file
+  set_fact:  
+    var_update_file: "{{ var_update_file_path }}o365_version_{{ var_version }}.txt"
+    
+- name: CONTRUCTING OBJECT QUERY IF "standard-acl" TYPE
+  set_fact:
+    var_query:  "show run | i access-list {{ var_object_name }}"
+  when: var_object_type == "standard-acl"
+
+- name: CONTRUCTING OBJECT QUERY IF "object-group" TYPE
+  set_fact:
+    var_query: "show object-group id {{ var_object_name }} "
+  when: var_object_type == "object-group"
+
+- name: LOOKING FOR OBJECT IN CURRENT CONFIG
+  asa_command:
+    commands:
+      - "{{ var_query }}"
+  register: output
+
+- name: LOOKING FOR VERSION INFORMATION BASED ON DESCRIPTION OR REMARK
+  set_fact:
+    var_found_version: "{{ output.stdout[0] | regex_findall('version_[0-9]{10,10}') | regex_replace('version_','')}}"
+  when: output is search("version_")
+
+- debug:
+    var: var_found_version
+
+- name: UPDATING IF NEW VERSION AVAILABLE   
+  block: 
+    - name: REPLACING STANDARD ACL - IF APPLICABLE 
+      vars:
+        var_object_name: "{{ var_object_name }}"
+        var_path: "{{ var_update_file }}"
+        var_current_acl: "{{ output.stdout_lines }}"
+        var_version: "{{ var_version }}"
+      import_tasks: asa-standard-acl-update.yml
+      when: var_object_type == "standard-acl"
+    - name: REPLACING OBJECT GROUP - IF APPLICABLE
+      vars:
+        var_object_name: "{{ var_object_name }}"
+        var_path: "{{ var_update_file }}"
+        var_current_obj: "{{ output.stdout_lines }}"
+        var_version: "{{ var_version }}"
+      import_tasks: asa-object-group-update.yml
+      when: var_object_type == "object-group" 
+  when: var_version | int  >  var_found_version[0] | int
+

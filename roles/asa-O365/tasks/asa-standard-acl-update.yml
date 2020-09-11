@@ -1,0 +1,40 @@
+- debug:
+    msg: "STANDARD ACL UPDATE  {{ var_object_name }}"
+
+- name: READ UPDATE FILE
+  set_fact:
+    var_update_acl: "{{ lookup('file', var_path ) | from_json }}"
+
+- debug:
+    var: var_update_acl
+
+- name: ADDING host 0.0.0.0 TO KEEP 1 RECORD IN OBJECT
+  asa_config:
+    lines:
+      - "access-list {{ var_object_name }} standard permit host 0.0.0.0"
+
+- name: REMOVING THE WHOLE ACL EXCEPT 0.0.0.0
+  asa_config:
+    lines:
+      - "no {{ item }}"
+  when: item is not search("host 0.0.0.0")
+  loop: "{{ var_current_acl | flatten }}"
+
+- name: ADDING VERSION REMARK
+  asa_config:
+    lines:
+      - access-list {{ var_object_name }} remark version_{{ var_version }}
+
+
+- name: ADDING NEW ACL
+  asa_config:
+    lines:
+      - "access-list {{ var_object_name }} standard permit {{ item }}"
+  when: item is not search("host 0.0.0.0")
+  loop: "{{ var_update_acl | flatten }}"
+
+- name: REMOVING host 0.0.0.0 ENTRY IF "var_allow_LAN"=FALSE
+  asa_config:
+    lines:
+      - "no access-list {{ var_object_name }} standard permit host 0.0.0.0"
+  when: not var_allow_LAN

@@ -1,0 +1,45 @@
+- debug:
+    msg: "EXISTING OBJ  {{ var_current_obj }}"
+
+- name: READ UPDATE FILE
+  set_fact:
+    var_update_obj_list: "{{ lookup('file', var_path ) | from_json }}"
+
+- name: ADDING host 0.0.0.0 TO KEEP 1 RECORD IN OBJECT
+  asa_config:
+    lines:
+      - "network-object host 0.0.0.0"
+    parents: ["object-group network {{ var_object_name }}"]
+
+- name: REMOVING THE WHOLE OBJECT CONTENT EXCEPT 0.0.0.0
+  asa_config:
+    lines:
+      - "no {{ item }}"
+    parents: ["object-group network {{ var_object_name }}"]
+  when: 
+    - item is not search("host 0.0.0.0")
+    - item is not search("object-group network")
+  loop: "{{ var_current_obj | flatten }}"
+  
+
+- name: ADDING VERSION DESCRIPTION
+  asa_config:
+    lines:
+      - "description version_{{ var_version }}"
+    parents: ["object-group network {{ var_object_name }}"]
+
+
+- name: ADDING ENTRIES TO OBJECT
+  asa_config:
+    lines:
+      - "network-object {{ item }}"
+    parents: ["object-group network {{ var_object_name }}"]
+  when: item is not search("host 0.0.0.0")
+  loop: "{{ var_update_obj_list | flatten }}"
+
+- name: REMOVING host 0.0.0.0 ENTRY IF "var_allow_LAN"=FALSE
+  asa_config:
+    lines:
+      - "no network-object host 0.0.0.0"
+    parents: ["object-group network {{ var_object_name }}"]
+  when: not var_allow_LAN

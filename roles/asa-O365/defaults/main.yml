@@ -1,0 +1,6 @@
+---
+# defaults file for asa-O365
+# if remark or description not found role assumes update is needed and found version is very old
+var_found_version: ['2000000000']
+var_update_file_path: "./update_files/"
+var_allow_LAN: false
